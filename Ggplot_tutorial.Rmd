@@ -1,0 +1,698 @@
+---
+title: "ggplot2 the easiest path to graphics"
+output: slidy_presentation
+---
+
+##install.packages("ggplot2")
+```{r,  message =FALSE}
+library(ggplot2)
+require(data.table)
+require(tidyr)
+library(GGally)
+library(ggthemes)
+```
+
+http://docs.ggplot2.org/0.9.3/
+
+http://cran.r-project.org/web/packages/ggplot2/ggplot2.pdf
+
+http://www.cookbook-r.com/Graphs/
+
+```{r, message =FALSE, echo=FALSE}
+library(grid)
+multiplot <- function(..., plotlist=NULL, file, cols=1, layout=NULL) {
+  library(grid)
+
+  # Make a list from the ... arguments and plotlist
+  plots <- c(list(...), plotlist)
+
+  numPlots = length(plots)
+
+  # If layout is NULL, then use 'cols' to determine layout
+  if (is.null(layout)) {
+    # Make the panel
+    # ncol: Number of columns of plots
+    # nrow: Number of rows needed, calculated from # of cols
+    layout <- matrix(seq(1, cols * ceiling(numPlots/cols)),
+                    ncol = cols, nrow = ceiling(numPlots/cols))
+  }
+
+ if (numPlots==1) {
+    print(plots[[1]])
+
+  } else {
+    # Set up the page
+    grid.newpage()
+    pushViewport(viewport(layout = grid.layout(nrow(layout), ncol(layout))))
+
+    # Make each plot, in the correct location
+    for (i in 1:numPlots) {
+      # Get the i,j matrix positions of the regions that contain this subplot
+      matchidx <- as.data.frame(which(layout == i, arr.ind = TRUE))
+
+      print(plots[[i]], vp = viewport(layout.pos.row = matchidx$row,
+                                      layout.pos.col = matchidx$col))
+    }
+  }
+}
+# setwd("I:/30-Aia/01-ggplot2")
+# setwd("/media/TOSHIBA EXT/30-Aia/01-ggplot2")
+facebook<-read.delim('pseudo_facebook.tsv')
+theme_set(theme_grey())
+```
+
+
+##qplot
+
+```{r}
+data.table(facebook)
+```
+
+```{r, eval =FALSE}
+qplot(dob_day,data=facebook)
+qplot(dob_day,data=facebook,breaks = 1:31)
+qplot(as.factor(dob_day),data=facebook)
+```
+
+```{r , echo=FALSE, fig.width = 15, fig.height = 5, warning =FALSE}
+multiplot(qplot(dob_day,data=facebook),
+          qplot(dob_day,data=facebook,breaks = 1:31),
+          qplot(as.factor(dob_day),data=facebook)
+          ,cols=3)
+```
+
+```{r, eval =FALSE,warning=FALSE}
+
+qplot(x=gender,y=friend_count,data=facebook)
+qplot(x=gender,y=friend_count,data=facebook,geom="boxplot")
+qplot(x=gender,y=friend_count,data=facebook,geom="boxplot",ylim = c(0, 1000))
+```
+```{r , echo=FALSE, fig.width = 15, fig.height = 5, warning =FALSE}
+multiplot(qplot(x=gender,y=friend_count,data=facebook),
+          qplot(x=gender,y=friend_count,data=facebook,geom="boxplot"),
+          qplot(x=gender,y=friend_count,data=facebook,geom="boxplot",ylim = c(0, 1000))
+          ,cols=3)
+```
+
+```{r, eval =FALSE}
+qplot( friend_count,likes,data=facebook)
+qplot( friend_count,likes,data=facebook,alpha=I(0.1) )
+qplot( friend_count,likes,data=facebook,alpha=I(0.1), color=gender)
+
+```
+
+```{r , echo=FALSE, fig.width = 15, fig.height = 5, warning =FALSE, message =FALSE}
+
+multiplot(
+  qplot( friend_count,likes,data=facebook),
+  qplot( friend_count,likes,data=facebook,alpha=I(0.1) ),
+  qplot( friend_count,likes,data=facebook,alpha=I(0.1), color=gender)
+  
+          ,layout= matrix(c(1,1,1, 2,2,2, 3,3,3,3), nrow = 1, byrow = TRUE))
+```
+
+##Themes
+```{r,  message =FALSE}
+library(ggthemes)
+```
+
+```{r,  warning =FALSE, eval =FALSE, message =FALSE}
+base <- qplot(dob_day,data=facebook,breaks = 1:31)
+base+theme_economist()+scale_colour_economist()
+base+theme_tufte()
+base<-base+theme_minimal()
+base$labels
+theme_set(theme_grey())
+```
+
+```{r , echo=FALSE, fig.width = 15, fig.height = 5, warning =FALSE, message =FALSE}
+base <- qplot(dob_day,data=facebook,breaks = 1:31)
+
+multiplot(base+theme_economist()+scale_colour_economist(),
+          base+theme_tufte(),
+          base+theme_minimal(),
+          cols=3)
+base <- base+theme_minimal()
+theme_set(theme_grey())
+```
+
+##geom_histogram
+```{r , error=TRUE }
+base <- ggplot(aes(x = dob_day), data = facebook)
+base
+head(base$data)
+base$labels
+base$layers
+```
+
+```{r, eval =FALSE, warning=FALSE, warning =FALSE}
+base_histograma      <- ggplot(aes(x = dob_day), data = facebook) + 
+                               geom_histogram() 
+base_mes_histograma  <- base + geom_histogram()
+
+base_histograma_axes <- ggplot(aes(x = dob_day), data = facebook) + 
+                               geom_histogram() + 
+                               scale_x_discrete(breaks = round(seq(1,31,4)))
+```
+
+```{r , echo=FALSE, fig.width = 15, fig.height = 5, warning =FALSE, message =FALSE}
+base_histograma      <- ggplot(aes(x = dob_day), data = facebook) + 
+                               geom_histogram() 
+base_mes_histograma  <- base + geom_histogram()
+
+base_histograma_axes <- ggplot(aes(x = dob_day), data = facebook) + 
+                               geom_histogram() + 
+                               scale_x_continuous(breaks = round(seq(1,31,4)))
+multiplot(base_histograma,base_mes_histograma,base_histograma_axes,cols=3)
+```
+
+
+##aes
+
+|  Argments      | Continuo  | Discreto  |
+|:--------------:|:---------:|:---------:|
+| x              | x         | x         |
+| y              | x         | x         |
+| colour         | x         | x         |
+| fill           | x         | x         |
+| size           | x         | x         |
+| shape          |           | x         |
+| linetype       |           | x         |
+| group          |           | x         |
+
+
+```{r, warning=FALSE,  message =FALSE}
+ggplot(data = facebook) + geom_histogram(aes(x = dob_day, group=as.factor(dob_month)),color="black")
+ggplot(data = facebook) + geom_histogram(aes(x = dob_day, fill =as.factor(dob_month)),color="black",linetype="dashed")
+ggplot(data = facebook) + geom_histogram(aes(x = dob_day, color=as.factor(dob_month)))
+
+p <- ggplot() +  
+          geom_histogram(data = facebook[facebook$dob_day==1 & facebook$dob_month==1 & !is.na(facebook$dob_year) ,] ,
+                         aes(x=dob_year , fill=as.factor(age)) , color="black" , binwidth=1)
+
+head(p$data)
+p$layers
+head(p$layers[[1]]$data)
+p
+```
+
+##Colors
+```{r, warning=FALSE,  message =FALSE}
+ggplot(data=data.frame(dimensions=letters[1:2]),aes(x=dimensions,fill=dimensions))+geom_bar()+coord_polar()
+ggplot(data=data.frame(dimensions=letters[1:3]),aes(x=dimensions,fill=dimensions))+geom_bar()+coord_polar()
+ggplot(data=data.frame(dimensions=letters[1:5]),aes(x=dimensions,fill=dimensions))+geom_bar()+coord_polar()
+ggplot(data=data.frame(dimensions=letters[1:20]),aes(x=dimensions,fill=dimensions))+geom_bar()+coord_polar()
+```
+
+
+##position
+```{r, eval =FALSE}
+fc.ten <-ggplot(aes(x = tenure/365, fill=gender), data = facebook)
+
+fc.ten + geom_histogram(binwidth=.25,position="dodge")
+fc.ten + geom_histogram(binwidth=.25,position="identity")
+fc.ten + geom_histogram(binwidth=.25,position="identity",alpha=0.5)
+fc.ten + geom_histogram(binwidth=.25,position="fill",alpha=0.5)
+
+
+```
+
+```{r , echo=FALSE, fig.width = 15, fig.height = 8, warning =FALSE, message =FALSE}
+
+
+fc.ten <-ggplot(aes(x = tenure/365, fill=gender), data = facebook)
+
+multiplot(
+  fc.ten + geom_histogram(binwidth=.25,position="dodge"),
+          fc.ten + geom_histogram(binwidth=.25,position="identity"),
+          fc.ten + geom_histogram(binwidth=.25,position="identity",alpha=0.5),
+          fc.ten + geom_histogram(binwidth=.25,position="fill",alpha=0.5)
+          ,cols=2)
+```
+
+```{r, fig.width = 15, fig.height = 8, warning =FALSE, message =FALSE}
+ggplot.obj <- fc.ten + geom_histogram(binwidth=.25,position="fill",alpha=0.5)
+ggplot.obj$layers
+ggplot.obj$mapping
+ggplot.obj$labels
+
+```
+
+
+##geom_density
+```{r, eval =FALSE}
+fc.ten <-ggplot(aes(x = tenure/365, fill=gender), data = facebook)
+fc.ten + geom_histogram(binwidth=.25,position="dodge")
+fc.ten + geom_histogram(aes(y = ..count..),binwidth=.25,position="dodge")
+fc.ten + geom_histogram(aes(y = ..density..),binwidth=.25,position="dodge")
+```
+
+```{r , echo=FALSE, fig.width = 15, fig.height = 5, warning=FALSE, message =FALSE}
+multiplot(
+  fc.ten + geom_histogram(binwidth=.25,position="dodge"),
+fc.ten + geom_histogram(aes(y = ..count..),binwidth=.25,position="dodge"),
+fc.ten + geom_histogram(aes(y = ..density..),binwidth=.25,position="dodge")
+            ,cols=3)
+```
+
+```{r, eval =FALSE}
+  fc.ten + geom_density(alpha=0.5)
+  fc.ten + geom_density(alpha=0.5,position="stack")
+  fc.ten + geom_density(alpha=0.5) + geom_histogram(aes(y = ..density..),binwidth=.25,position="dodge")
+```
+
+```{r , echo=FALSE, fig.width = 15, fig.height = 5, warning =FALSE, message =FALSE}
+multiplot(
+  fc.ten + geom_density(alpha=0.5),
+  fc.ten + geom_density(alpha=0.5,position="stack"),
+  fc.ten  + geom_density(alpha=0.5) + geom_histogram(aes(y = ..density..),binwidth=.25,position="dodge")
+            ,cols=3)
+```
+
+```{r, fig.width = 15, fig.height = 5, warning=FALSE, message =FALSE}
+ggplot(aes(x = age), data = facebook) + geom_density(alpha=0.5)
+ggplot(aes(x = age, fill=gender), data = facebook) + geom_density(alpha=0.5)
+ggplot(aes(x = age, fill=gender), data = facebook[!is.na(facebook$gender),]) + geom_density(alpha=0.5)
+ggplot(aes(x = age, fill=gender), data = facebook[facebook$gender=="female",])+geom_density(alpha=0.5)
+```
+
+##Axe Transformations
+```{r, eval =FALSE}
+ggplot(aes(x = friend_count), data = facebook) +
+  geom_histogram(binwidth=25) +
+  scale_x_continuous(limits = c(0, 1000), breaks = seq(0, 1000, 100))
+
+ggplot(aes(x = sqrt(friend_count)), data = facebook) + 
+  geom_histogram(binwidth=1)
+
+ggplot(aes(x = friend_count), data = facebook) + 
+  geom_histogram(binwidth=1)+
+  scale_x_sqrt()
+```
+
+````{r , echo=FALSE, fig.width = 15, fig.height = 5, warning =FALSE, message =FALSE}
+multiplot(ggplot(aes(x = friend_count), data = facebook) + 
+  geom_histogram(binwidth=25)+
+  scale_x_continuous(limits = c(0, 1000), breaks = seq(0, 1000, 100)),
+
+ggplot(aes(x = sqrt(friend_count)), data = facebook) + 
+  geom_histogram(binwidth=1),
+ggplot(aes(x = friend_count), data = facebook) + 
+  geom_histogram(binwidth=1)+
+  scale_x_sqrt(),
+ cols=3
+  )
+```
+
+```{r, eval =FALSE}
+ggplot(aes(x = log10(friend_count)), data = facebook) + 
+  geom_histogram()
+
+ggplot(aes(x = friend_count), data =facebook) + 
+  geom_histogram() +
+  scale_x_log10(breaks = c(1,10,100,1000))
+```
+
+````{r , echo=FALSE, fig.width = 15, fig.height = 5, warning =FALSE, message =FALSE}
+multiplot(ggplot(aes(x = log10(friend_count)), data = facebook) + 
+  geom_histogram(),
+
+ggplot(aes(x = friend_count), data =facebook) + 
+  geom_histogram() +
+  scale_x_log10(breaks = c(1,10,100,1000)),
+ cols=2
+  )
+```
+
+```{r, fig.width = 5, fig.height = 5, warning =FALSE, message =FALSE}
+head(diamonds)
+ggplot(data=diamonds,aes(x=carat,y=price))+geom_point(alpha=0.1)
+ggplot(data=diamonds,aes(x=carat,y=price,color=color))+geom_point(alpha=0.1)
+ggplot(data=diamonds,aes(x=carat,y=price,color=color))+geom_point(alpha=0.1)+scale_y_log10()+scale_x_log10()
+
+```
+
+##Labe and Axes
+```{r, eval =FALSE}
+ggplot(aes(x = friend_count, y = ..count..), data = subset(facebook, !is.na(gender))) + 
+  geom_freqpoly(aes(color = gender),binwidth=25) 
+
+ggplot(aes(x = friend_count, y = ..count..), data = subset(facebook, !is.na(gender))) + 
+  geom_freqpoly(aes(color = gender),binwidth=25) +
+  scale_x_continuous(limits = c(0, 1000), breaks = seq(0, 1000, 100)) + 
+          xlab('Friend Count') + 
+          ylab('users with that friend count')
+
+ggplot(aes(x = friend_count, y = ..count../sum(..count..)), data = subset(facebook, !is.na(gender))) + 
+  geom_freqpoly(aes(color = gender),binwidth=25) +
+  scale_x_continuous(limits = c(0, 1000), breaks = seq(0, 1000, 100)) + 
+  scale_y_continuous(labels =c("0%","5%","10%"),breaks = c(0,0.05,0.10))+
+  xlab('Friend Count') + 
+  ylab('Percentage of users with that friend count')
+```
+
+````{r , echo=FALSE, fig.width = 15, fig.height = 5, warning =FALSE, message =FALSE}
+multiplot(
+  ggplot(aes(x = friend_count, y = ..count..), data = subset(facebook, !is.na(gender))) + 
+  geom_freqpoly(aes(color = gender),binwidth=25),
+
+ggplot(aes(x = friend_count, y = ..count..), data = subset(facebook, !is.na(gender))) + 
+  geom_freqpoly(aes(color = gender),binwidth=25) +
+  scale_x_continuous(limits = c(0, 1000), breaks = seq(0, 1000, 100)) + 
+          xlab('Friend Count') + 
+          ylab('users with that friend count'),
+
+ggplot(aes(x = friend_count, y = ..count../sum(..count..)), data = subset(facebook, !is.na(gender))) + 
+  geom_freqpoly(aes(color = gender),binwidth=25) +
+  scale_x_continuous(limits = c(0, 1000), breaks = seq(0, 1000, 100)) + 
+  scale_y_continuous(labels =c("0%","5%","10%"),breaks = c(0,0.05,0.10))+
+  xlab('Friend Count') + 
+  ylab('Percentage of users with that friend count'),
+     cols=3
+  )
+```
+
+##geom_boxplot
+```{r, eval =FALSE}
+fcg <-ggplot(aes(x=gender,y=age), data = subset(facebook, !is.na(gender)))+
+  geom_boxplot()
+
+fcg
+fcg + geom_jitter(,alpha=1/20)
+```
+
+````{r , echo=FALSE, fig.width = 15, fig.height = 5, warning =FALSE, message =FALSE}
+fcg <-ggplot(aes(x=gender,y=age), data = subset(facebook, !is.na(gender)))+
+  geom_boxplot()
+
+multiplot(fcg,
+          fcg  + geom_jitter(,alpha=1/20), 
+          cols=2
+  )
+````
+
+```{r, eval =FALSE}
+fcg + ylim(0,60)
+fcg + scale_y_continuous(limits = c(0, 60))
+fcg + coord_cartesian(ylim = c(0, 60))
+````
+
+````{r , echo=FALSE, fig.width = 15, fig.height = 5, warning =FALSE, message =FALSE}
+multiplot(
+fcg + ylim(0,60),
+fcg + scale_y_continuous(limits = c(0, 60)),
+fcg + coord_cartesian(ylim = c(0, 60)),
+     cols=3
+  )
+```
+
+##Multi Layer
+```{r, fig.width = 15, fig.height = 5, warning =FALSE, message =FALSE}
+head(mpg)
+
+ggplot(data=mpg,aes(x=as.factor(cyl),y=cty))+geom_boxplot(color="blue")
+ggplot(data=mpg,aes(x=as.factor(cyl),y=hwy))+geom_boxplot(color="brown")
+ggplot(data=mpg,aes(x=as.factor(cyl)))+geom_boxplot(aes(y=cty),color="blue")+geom_boxplot(aes(y=hwy),color="brown")
+
+ggplot(data=mpg,aes(x=as.factor(cyl)))+
+  geom_violin(aes(y=cty),color="blue",alpha=0.5)+
+  geom_violin(aes(y=hwy),color="brown",alpha=0.5)+
+  geom_point(aes(y=(cty+hwy)/2),color="black",alpha=0.5,position=position_jitter(h=0,w=0.2 ) )
+
+```
+
+##geom_point
+```{r, eval =FALSE}
+fcp <- ggplot(aes(x = age, y = friend_count), data = facebook)
+fcp + geom_point()
+
+fcp <-fcp + xlim(min(facebook$age),100)
+fcp + geom_point()
+```
+
+````{r , echo=FALSE, fig.width = 15, fig.height = 5, warning =FALSE, message =FALSE}
+fcp <- ggplot(aes(x = age, y = friend_count), data = facebook)
+
+multiplot( 
+fcp + geom_point(),
+fcp + geom_point() + xlim(min(facebook$age),100),
+     cols=2
+  )
+
+fcp <-fcp + xlim(min(facebook$age),100)
+```
+
+```{r,  fig.width = 15, fig.height = 5, warning =FALSE, message =FALSE,error=TRUE}
+fcp + geom_point ( alpha=1/20)
+fcp + geom_jitter( alpha=1/20)
+fcp + geom_point ( alpha=1/20) + coord_trans(y = 'sqrt')
+fcp + geom_point ( alpha=1/20, position=position_jitter() ) + coord_trans(y = 'sqrt')
+fcp + geom_point ( alpha=1/20, position=position_jitter(h=0) ) + coord_trans(y = 'sqrt')
+fcp + geom_point ( alpha=1/20, position=position_jitter(h=0) ) + scale_y_log10()
+```
+
+
+##stat="summary"
+```{r}
+
+facebook <- as.data.table(facebook)
+gruped.friend_count <- facebook[,.(friend_count_mean=mean(friend_count)),by=.(age,gender)]
+gruped.friend_count 
+gruped.friend_count <- spread(gruped.friend_count,gender,friend_count_mean)
+gruped.friend_count
+gather(gruped.friend_count,gender,friend_count_mean,-age)
+
+ggplot(aes(x=age,y=female/male) , data = gruped.friend_count )+
+  geom_line()+
+  geom_hline(yintercept=1 , alpha=0.3 , linetype=2)
+
+facebook$Year_joined<-floor(2014-facebook$tenure/365)
+facebook$Year_joined_buket<-cut(facebook$Year_joined, c(2004,2009,2011,2012,2014))
+```
+
+
+
+```{r, warning =FALSE, message =FALSE}
+facebook.joined <- facebook[!is.na(gender),.(friend_count.mean=mean(friend_count),friend_count.sum=sum(friend_count)),by=.(Year_joined_buket,age)]
+facebook.joined
+```
+
+```{r, eval =FALSE}
+ggplot(data=facebook.joined)+geom_point(aes(x=age,y=friend_count.sum,color=Year_joined_buket))
+ggplot(data=facebook.joined)+geom_line(aes(x=age,y=friend_count.sum,color=Year_joined_buket))
+```
+
+````{r , echo=FALSE, fig.width = 15, fig.height = 5, warning =FALSE, message =FALSE}
+multiplot( 
+ggplot(data=facebook.joined)+geom_point(aes(x=age,y=friend_count.sum,color=Year_joined_buket)),
+ggplot(data=facebook.joined)+geom_line(aes(x=age,y=friend_count.sum,color=Year_joined_buket)),
+      cols=2
+  ) 
+```
+
+
+```{r, fig.width = 15, fig.height = 5, warning =FALSE, message =FALSE}
+fc.NoNA <- ggplot(aes(x=age,y=friend_count) , data = subset(facebook, !is.na(gender)) )
+fc.NoNA + geom_point(aes(color=Year_joined_buket))
+fc.NoNA + geom_point(aes(color=Year_joined_buket), stat="summary",fun.y=sum)
+fc.NoNA + geom_line (aes(color=Year_joined_buket), stat="summary",fun.y=sum)
+```
+
+
+##geom_line
+
+```{r, eval =FALSE}
+fc.NoNA + geom_line (aes(color=Year_joined_buket), stat="summary",fun.y=mean)
+fc.NoNA + geom_line (aes(color=Year_joined_buket), stat="summary",fun.y=mean)+
+          geom_line (stat="summary",fun.y=mean,linetype=2)
+```
+
+````{r , echo=FALSE, fig.width = 15, fig.height = 5, warning =FALSE, message =FALSE}
+multiplot( 
+  fc.NoNA + geom_line (aes(color=Year_joined_buket), stat="summary",fun.y=mean),
+fc.NoNA + geom_line (aes(color=Year_joined_buket), stat="summary",fun.y=mean)+
+          geom_line (stat="summary",fun.y=mean,linetype=2),
+      cols=2
+  ) 
+```
+
+```{r, warning =FALSE, message =FALSE}
+fcp + geom_point(alpha=1/10,
+                position=position_jitter(h=0),
+                color="darkgreen") +
+  geom_line(stat="summary",fun.y=mean) +
+  geom_line(stat="summary",fun.y=quantile,fun.args=list(probs=.1),linetype=2,color="blue") +
+  geom_line(stat="summary",fun.y=quantile,fun.args=list(probs=.5),linetype=1,color="blue") +
+  geom_line(stat="summary",fun.y=quantile,fun.args=list(probs=.9),linetype=2,color="blue") +
+  coord_trans(y = "sqrt")
+```
+
+```{r, warning =FALSE, message =FALSE}
+ggplot( aes(x=tenure,y=friendships_initiated), data=subset(facebook,tenure>0) )+
+        geom_line(aes(color=Year_joined_buket), stat="summary", fun.y=mean)
+```
+
+```{r, fig.width = 15, fig.height = 5, warning =FALSE, message =FALSE}
+line.layer <- geom_line(aes(color=Year_joined_buket), stat="summary", fun.y=mean)
+
+ggplot( aes(x=tenure             ,y=friendships_initiated/tenure), data=subset(facebook,tenure>0) ) + line.layer 
+ggplot( aes(x=7*round(tenure/7)  ,y=friendships_initiated/tenure), data=subset(facebook,tenure>0) ) + line.layer
+ggplot( aes(x=90*round(tenure/90),y=friendships_initiated/tenure), data=subset(facebook,tenure>0) ) + line.layer
+```
+
+
+##geom_smooth
+```{r, eval =FALSE}
+fsmoth <- ggplot(aes(x=tenure,y=friendships_initiated/tenure), data=subset(facebook,tenure>0) )
+
+fsmoth +  geom_smooth(aes(color=Year_joined_buket,fill=Year_joined_buket))
+fsmoth +  geom_smooth(aes(group=Year_joined_buket))
+fsmoth +  geom_smooth()
+```
+
+````{r , echo=FALSE, fig.width = 15, fig.height = 5, warning =FALSE, message =FALSE}
+fsmoth <- ggplot(aes(x=tenure,y=friendships_initiated/tenure), data=subset(facebook,tenure>0) )
+multiplot( 
+  ggplot(aes(x=tenure,y=friendships_initiated/tenure), data=subset(facebook,tenure>0) )+
+  geom_smooth(aes(color=Year_joined_buket,fill=Year_joined_buket)),
+ggplot(aes(x=tenure,y=friendships_initiated/tenure,group=Year_joined_buket), data=subset(facebook,tenure>0) )+
+  geom_smooth(),
+ggplot(aes(x=tenure,y=friendships_initiated/tenure), data=subset(facebook,tenure>0) )+
+  geom_smooth(),
+      cols=3
+  ) 
+```
+
+##geom_rug
+```{r, eval =FALSE}
+ rug.plot <- ggplot(aes(x=tenure,y=friendships_initiated/tenure), data=subset(facebook,tenure>0) )+
+  geom_smooth(aes(color=Year_joined_buket,fill=Year_joined_buket))
+
+rug.plot + geom_rug()
+
+rug.plot + geom_rug(data=facebook[facebook$tenure>0,][sample(nrow(facebook[facebook$tenure>0,]), 1000),] ,alpha=0.1)
+
+rug.plot + geom_rug(data=facebook[facebook$tenure>0,][sample(nrow(facebook[facebook$tenure>0,]), 1000),] ,alpha=0.1)+ coord_cartesian(ylim = c(-0.5, 5))
+
+```
+
+````{r , echo=FALSE, fig.width = 15, fig.height = 5, warning =FALSE, message =FALSE}
+ rug.plot <- ggplot(aes(x=tenure,y=friendships_initiated/tenure), data=subset(facebook,tenure>0) )+
+  geom_smooth(aes(color=Year_joined_buket,fill=Year_joined_buket))
+multiplot( 
+rug.plot + geom_rug(),
+
+rug.plot + geom_rug(data=facebook[facebook$tenure>0,][sample(nrow(facebook[facebook$tenure>0,]), 1000),] ,alpha=0.1),
+
+rug.plot + geom_rug(data=facebook[facebook$tenure>0,][sample(nrow(facebook[facebook$tenure>0,]), 1000),] ,alpha=0.1)+ coord_cartesian(ylim = c(-0.5, 5)),
+      cols=3
+  ) 
+```
+
+```{r, eval =FALSE}
+sample.facebook <- facebook[facebook$tenure>0,][sample(nrow(facebook[facebook$tenure>0,]), 1000),]
+fc.ten.sample <-ggplot(aes(x = tenure/365, fill=gender), data = sample.facebook )
+
+fc.ten.sample + geom_density(alpha=0.5)
+fc.ten.sample + geom_density(alpha=0.5)+geom_rug(alpha=0.1)
+fc.ten.sample + geom_density(alpha=0.5)+geom_rug(aes(color=gender),alpha=0.1)
+```
+
+
+````{r , echo=FALSE, fig.width = 15, fig.height = 5, warning =FALSE, message =FALSE}
+sample.facebook <- facebook[facebook$tenure>0,][sample(nrow(facebook[facebook$tenure>0,]), 1000),]
+fc.ten.sample <-ggplot(aes(x = tenure/365, fill=gender), data = sample.facebook )
+multiplot( 
+fc.ten.sample + geom_density(alpha=0.5),
+fc.ten.sample + geom_density(alpha=0.5)+geom_rug(alpha=0.1),
+fc.ten.sample + geom_density(alpha=0.5)+geom_rug(aes(color=gender),alpha=0.1),
+      cols=3
+  ) 
+
+```
+
+##Faceting
+
+```{r,fig.width = 15, fig.height = 5, warning =FALSE, message =FALSE}
+fc.ten.sample + geom_density(alpha=0.5)+geom_rug(aes(color=gender),alpha=0.1)+ facet_wrap(~gender)
+
+f.dob_day <- ggplot(aes(x = dob_day), data = facebook) + 
+                               geom_histogram() + 
+                               scale_x_continuous(breaks = round(seq(1,31,4)))
+
+f.dob_day + facet_wrap(~dob_month)
+f.dob_day + facet_wrap(~dob_month,nrow = 2, ncol = 6)
+f.dob_day + facet_grid(gender~dob_month)
+f.dob_day + facet_grid(gender~dob_month,scales="free")
+f.dob_day + facet_grid(gender~dob_month,scales="free",space="free")
+```
+
+##ggpairs
+
+```{r,fig.width = 15, fig.height = 15, warning =FALSE, message =FALSE}
+library(GGally)
+set.seed(1234)
+facebook_subset<-facebook[,.(gender,tenure,friend_count,friendships_initiated, likes, likes_received)]
+ggpairs(facebook_subset[sample.int(nrow(facebook_subset),1000),])
+```
+
+##geom_tiles
+```{r,fig.width = 10, fig.height = 10, warning =FALSE, message =FALSE}
+pp <- function (n,r=4) {
+  x <- seq(-r*pi, r*pi, len=n)
+  df <- expand.grid(x=x, y=x)
+  df$r <- sqrt(df$x^2 + df$y^2)
+  df$z <- cos(df$r^2)*exp(-df$r/6)
+  df
+}
+
+dt <- data.table( pp(200))
+dt
+
+ggplot(data=dt) + geom_tile(aes(x=x, y=y, fill=z))
+
+dt$xbind <- cut(dt$x,breaks=seq(min(dt$x),max(dt$x),length.out = 100))
+dt$ybind <- cut(dt$y,breaks=seq(min(dt$y),max(dt$y),length.out = 100))
+dt.bind<- dt[,.(mean.x=mean(x),mean.y=mean(y),fill.z=mean(z)),by=.(xbind,ybind)]
+ggplot( data=dt[,.(fill.z=mean(z)),by=.(xbind,ybind)] ) + geom_tile(aes(x=xbind, y=ybind, fill=fill.z))
+
+dt <- data.frame(cbind(rnorm(10000),rnorm(10000)) %*% matrix(c(2,1,3,3), nrow=2))
+ggplot(data=dt) + geom_bin2d(aes(x=X1, y=X2), binwidth = c(0.2, 0.2))
+ggplot(data=dt) + geom_density2d(aes(x=X1, y=X2))
+ggplot(data=dt) + stat_density2d(aes(x=X1, y=X2,fill=..level..,alpha=..level..), geom="polygon")
+ggplot(data=dt) + geom_bin2d(aes(x=X1, y=X2), binwidth = c(0.2, 0.2)) + geom_density2d(aes(x=X1, y=X2),color="white")
+
+
+
+
+```
+
+##Maps
+```{r,fig.width = 10, fig.height = 10, warning =FALSE, message =FALSE}
+library(ggmap)
+library(sp)
+MunicipisCataluna <- fread("MunicipisCatalunya.csv",sep=";",stringsAsFactors=T)
+MunicipisCataluna[,c("x","y"):=list(as.numeric(gsub(",",".",lon,fixed = T)),as.numeric(gsub(",",".",lat,fixed = T)))]
+MunicipisCataluna[,c("lat","lon"):=NULL]
+MunicipisCataluna <- unite(MunicipisCataluna,region,c(municipio,compontnt),sep=" ",remove=FALSE)
+
+MunicipisCataluna
+
+ggplot(MunicipisCataluna, aes(map_id = region)) +
+  geom_map( aes(fill = codigoine) , color="black", map = MunicipisCataluna) + 
+  expand_limits(x = MunicipisCataluna$x, y = MunicipisCataluna$y)+ 
+  theme( legend.position = "none" )
+
+background.map <- get_map(location=c(mean(MunicipisCataluna$x),mean(MunicipisCataluna$y)),source="google",maptype="toner",zoom=8)
+mon.shapes <- geom_polygon(data=MunicipisCataluna,aes(x = MunicipisCataluna$x, y = MunicipisCataluna$y-0.017,group = region, fill=codigoine),alpha=0.7,color=rgb(0,0,0,.3))
+
+
+ggmap(background.map) +
+  mon.shapes  +
+  expand_limits(x = MunicipisCataluna$x, y = MunicipisCataluna$y)+
+  theme(legend.position="none")
+
+```
+
+
+
